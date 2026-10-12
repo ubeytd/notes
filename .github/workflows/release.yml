@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to publish
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - name: Check version and tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${{ inputs.tag || github.ref_name }}"
+          version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' packaging/Info.plist)
+          test "$tag" = "v$version"
+          git tag --list "$tag" | grep -Fx "$tag"
+          echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
+          echo "RELEASE_VERSION=$version" >> "$GITHUB_ENV"
+      - name: Check source and tests
+        run: |
+          node --check Sources/Notes/Web/app.js
+          python3 -m unittest discover -s tests -v
+      - name: Build universal disk image
+        run: ./scripts/build-dmg.sh
+      - name: Verify release artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          app=dist/Notes.app
+          image="dist/Notes-${RELEASE_VERSION}-universal.dmg"
+          archs=$(lipo -archs "$app/Contents/MacOS/Notes")
+          [[ " $archs " == *" arm64 "* ]]
+          [[ " $archs " == *" x86_64 "* ]]
+          codesign --verify --deep --strict "$app"
+          plutil -lint "$app/Contents/Info.plist"
+          hdiutil verify "$image"
+          (cd dist && shasum -a 256 -c "Notes-${RELEASE_VERSION}-universal.dmg.sha256")
+      - name: Publish prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_TAG" \
+            "dist/Notes-${RELEASE_VERSION}-universal.dmg" \
+            "dist/Notes-${RELEASE_VERSION}-universal.dmg.sha256" \
+            --verify-tag \
+            --title "Notes ${RELEASE_VERSION} Developer Preview" \
+            --notes-file "docs/releases/${RELEASE_TAG}.md" \
+            --prerelease \
+            --latest=false
