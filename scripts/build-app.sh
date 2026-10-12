@@ -11,7 +11,24 @@ app="dist/Notes.app"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 lipo -create "$arm_bin/Notes" "$intel_bin/Notes" -output "$app/Contents/MacOS/Notes"
-cp -R "$arm_bin/Notes_Notes.bundle" "$app/Contents/Resources/"
+resource_source="$arm_bin/Notes_Notes.bundle"
+resource_bundle="$app/Contents/Resources/Notes_Notes.bundle"
+mkdir -p "$resource_bundle/Contents/Resources"
+if [[ -d "$resource_source/Contents/Resources" ]]; then
+    cp -R "$resource_source/Contents/Resources/." "$resource_bundle/Contents/Resources/"
+else
+    cp -R "$resource_source/." "$resource_bundle/Contents/Resources/"
+fi
+cat > "$resource_bundle/Contents/Info.plist" <<'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleIdentifier</key><string>dev.ubeytd.notes.resources</string>
+<key>CFBundleName</key><string>Notes Resources</string>
+<key>CFBundlePackageType</key><string>BNDL</string>
+<key>CFBundleVersion</key><string>1</string>
+</dict></plist>
+PLIST
 cp mcp/notes_server.py "$app/Contents/Resources/notes_mcp_server.py"
 cp packaging/Info.plist "$app/Contents/Info.plist"
 
@@ -34,4 +51,6 @@ else
 fi
 codesign --verify --deep --strict --verbose=2 "$app"
 plutil -lint "$app/Contents/Info.plist"
+plutil -lint "$resource_bundle/Contents/Info.plist"
+swift -e 'import Foundation; let bundle = Bundle(url: URL(fileURLWithPath: CommandLine.arguments[1]))!; precondition(bundle.url(forResource: "index", withExtension: "html", subdirectory: "Web") != nil)' "$resource_bundle"
 echo "Built universal $app"
