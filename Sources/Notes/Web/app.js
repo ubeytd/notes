@@ -386,7 +386,7 @@
     const selection = window.getSelection();
     const node = selection?.anchorNode;
     const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
-    return element?.closest('p,div,h1,h2,h3,blockquote,pre,li') || editor;
+    return element?.closest('p,div,h1,h2,h3,h4,h5,h6,blockquote,pre,li') || editor;
   }
   function slashPrefix() {
     const selection = window.getSelection();
@@ -492,6 +492,34 @@
     const selection=window.getSelection();
     const anchor=selection?.anchorNode;
     const element=anchor?.nodeType===Node.ELEMENT_NODE?anchor:anchor?.parentElement;
+    if(e.key===' '&&!e.metaKey&&!e.ctrlKey&&!e.altKey&&!e.isComposing){
+      const prefix=slashPrefix();
+      const level=prefix?.text.match(/^(#{1,6})$/)?.[1].length;
+      if(level&&(prefix.block===editor||prefix.block.matches('p,div,h1,h2,h3,h4,h5,h6'))){
+        e.preventDefault();e.stopPropagation();
+        prefix.range.deleteContents();prefix.range.collapse(true);
+        selection.removeAllRanges();selection.addRange(prefix.range);
+        document.execCommand('formatBlock',false,`h${level}`);
+        queueSave();return;
+      }
+    }
+    const heading=element?.closest('h1,h2,h3,h4,h5,h6');
+    if(heading&&editor.contains(heading)&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){
+      const range=selection?.rangeCount?selection.getRangeAt(0):null;
+      if(range&&heading.contains(range.startContainer)&&heading.contains(range.endContainer)){
+        e.preventDefault();e.stopPropagation();
+        if(!selection.isCollapsed)range.deleteContents();
+        const tail=document.createRange();tail.selectNodeContents(heading);
+        tail.setStart(range.startContainer,range.startOffset);
+        const paragraph=document.createElement('p');paragraph.append(tail.extractContents());
+        if(!paragraph.textContent.trim())paragraph.replaceChildren(document.createElement('br'));
+        heading.after(paragraph);
+        if(!heading.textContent.trim())heading.remove();
+        const caret=document.createRange();caret.selectNodeContents(paragraph);caret.collapse(true);
+        selection.removeAllRanges();selection.addRange(caret);savedRange=caret.cloneRange();
+        queueSave();return;
+      }
+    }
     const task=element?.closest('ul.checklist > li');
     if(task&&editor.contains(task)&&e.key==='Enter'&&!e.isComposing&&!e.shiftKey){
       const range=selection?.rangeCount?selection.getRangeAt(0):null;

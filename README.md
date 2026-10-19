@@ -2,7 +2,7 @@
 
 An open source, local-first notes app for macOS. Write in a focused editor, organize with lightweight formatting, and find anything with the keyboard. Built independently for focused writing and quick capture.
 
-[Download the developer preview](https://github.com/ubeytd/notes/releases/tag/v1.0.4) · [Release process](RELEASING.md)
+[Download the developer preview](https://github.com/ubeytd/notes/releases/tag/v1.0.5) · [Release process](RELEASING.md)
 
 ![Notes in the Noir theme](screenshots/noir.png)
 
@@ -33,7 +33,7 @@ You can also open `dist/Notes.app` in Finder after building.
 ./scripts/build-dmg.sh
 ```
 
-This builds a universal Intel and Apple Silicon app, creates its icon, ad hoc signs the bundle, and writes `dist/Notes-1.0.4-universal.dmg` plus a SHA-256 checksum. Open the DMG and drag **Notes.app** to **Applications**. The bundle supports macOS 13 or newer.
+This builds a universal Intel and Apple Silicon app, creates its icon, ad hoc signs the bundle, and writes `dist/Notes-1.0.5-universal.dmg` plus a SHA-256 checksum. Open the DMG and drag **Notes.app** to **Applications**. The bundle supports macOS 13 or newer.
 
 When replacing an older build, your notes remain in the same local data file. Theme, glass, and custom shortcut preferences may need to be set again once because the app identifier and preference keys changed.
 
@@ -54,6 +54,7 @@ Create the `notarytool` keychain profile before using the second command. Withou
 - A first-run welcome window explains local storage, shortcuts, and permissions. Open **Notes → Welcome to Notes** to see it again.
 - `⌘,` opens native Settings. Appearance offers preview cards for Noir (the black and white default), Graphite, and Evergreen. The chosen theme controls accents, selection, and glass tint. The Liquid Glass switch and strength slider adjust the note window's transparency and blur, along with its menus and controls. These choices persist across launches. Shortcuts lets you record new combinations; conflicts are rejected, and Reset Defaults restores the original keys.
 - Type `/` at the start of a block for a searchable formatting menu. Use arrow keys and Return to insert headings, lists, quotes, dividers, inline code, or code blocks. Use **Rename Note** in Actions, or right click a note in Browse Notes. A renamed title stays independent of the body; without a custom name, the first H1 is used as the note title.
+- Type `# ` through `###### ` at the start of a line to create a heading. Press Return in a heading to continue in a normal paragraph.
 - Browse Notes, Actions, and Settings open without selecting a search field. Start typing to search, use arrow keys and Return to navigate launchers, or press Escape to close them. Typing on the note canvas begins editing.
 - Common formatting keys include `⌘B` for bold, `⌘I` for italic, `⌘U` for underline, `⌘⌥1` through `⌘⌥3` for headings, and `⌘⇧8` for a bulleted list. Press `⌘,` or click the Settings button to open a separate native macOS window where you can search and change shortcuts.
 - Pasting Markdown renders headings, emphasis, links, fenced code blocks, tables, task lists, quotes, and other CommonMark and GFM syntax. Rich HTML paste keeps its formatting. Copy and export as Markdown preserve these structures.
@@ -90,8 +91,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). This project is licensed under [MIT](LIC
 ```sh
 node --check Sources/Notes/Web/app.js
 python3 -m unittest discover -s tests -v
+swift tests/test_editor_headings.swift Sources/Notes/Web/index.html
 codesign --verify --deep --strict dist/Notes.app
-hdiutil verify dist/Notes-1.0.4-universal.dmg
+hdiutil verify dist/Notes-1.0.5-universal.dmg
 ```
 
 
