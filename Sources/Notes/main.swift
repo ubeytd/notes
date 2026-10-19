@@ -82,7 +82,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
 
     private func saveNotesToDisk(_ content: String) {
         guard let bytes = content.data(using: .utf8),
-              (try? JSONSerialization.jsonObject(with: bytes)) is [String: Any] else { return }
+              let object = try? JSONSerialization.jsonObject(with: bytes) as? [String: Any],
+              object["notes"] is [[String: Any]] else {
+            webView.evaluateJavaScript("window.notesStorageError('write')")
+            return
+        }
         guard withNotesLock({ try bytes.write(to: notesFile, options: .atomic); return true }) == true else {
             webView.evaluateJavaScript("window.notesStorageError('write')")
             return

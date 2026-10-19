@@ -2,6 +2,7 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 
 SERVER_PATH = Path(__file__).resolve().parents[1] / 'mcp' / 'notes_server.py'
@@ -49,6 +50,26 @@ class NotesMCPTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             server.run_tool('create_note', {'content': 'Keep the corrupt file for recovery'})
         self.assertEqual(server.DATA_FILE.read_text(encoding='utf-8'), bad_data)
+
+    def test_first_read_migrates_legacy_notes_with_exclusive_lock(self):
+        home = Path(self.directory.name)
+        server.DATA_FILE = home / 'Library/Application Support/Notes/notes.json'
+        server.LOCK_FILE = server.DATA_FILE.with_suffix('.lock')
+        old_legacy = server.LEGACY_DATA_FILE
+        server.LEGACY_DATA_FILE = home / 'Library/Application Support/NotesRebuild/notes.json'
+        server.LEGACY_DATA_FILE.parent.mkdir(parents=True)
+        server.LEGACY_DATA_FILE.write_text('{"notes":[],"current":null}', encoding='utf-8')
+        locks = []
+        flock = server.fcntl.flock
+        try:
+            with mock.patch.object(server.Path, 'home', return_value=home), \
+                 mock.patch.dict(server.os.environ, {}, clear=True), \
+                 mock.patch.object(server.fcntl, 'flock', side_effect=lambda fd, mode: (locks.append(mode), flock(fd, mode))):
+                self.assertEqual(server.run_tool('list_notes', {})['notes'], [])
+            self.assertEqual(locks[0], server.fcntl.LOCK_EX)
+            self.assertEqual(server.DATA_FILE.read_text(encoding='utf-8'), '{"notes":[],"current":null}')
+        finally:
+            server.LEGACY_DATA_FILE = old_legacy
 
     def test_protocol_has_required_tools(self):
         initialized = server.dispatch({'method': 'initialize', 'params': {'protocolVersion': '2025-06-18'}})

@@ -50,6 +50,8 @@ jobs:
           plutil -lint "$app/Contents/Info.plist"
           hdiutil verify "$image"
           (cd dist && shasum -a 256 -c "Notes-${RELEASE_VERSION}-universal.dmg.sha256")
+      - name: Smoke test relocated app
+        run: bash scripts/smoke-app.sh
       - name: Publish prerelease
         env:
           GH_TOKEN: ${{ github.token }}

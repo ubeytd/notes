@@ -60,7 +60,10 @@ def note_title(note):
 def transaction(write=False):
     DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(LOCK_FILE, 'a+b') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX if write else fcntl.LOCK_SH)
+        migration_pending = ('NOTES_DATA_FILE' not in os.environ
+                             and DATA_FILE == Path.home() / 'Library/Application Support/Notes/notes.json'
+                             and not DATA_FILE.exists() and LEGACY_DATA_FILE.exists())
+        fcntl.flock(lock, fcntl.LOCK_EX if write or migration_pending else fcntl.LOCK_SH)
         try:
             if 'NOTES_DATA_FILE' not in os.environ and DATA_FILE == Path.home() / 'Library/Application Support/Notes/notes.json' and not DATA_FILE.exists() and LEGACY_DATA_FILE.exists():
                 shutil.copy2(LEGACY_DATA_FILE, DATA_FILE)
