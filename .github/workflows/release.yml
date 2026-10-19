@@ -46,6 +46,7 @@ jobs:
           [[ " $archs " == *" arm64 "* ]]
           [[ " $archs " == *" x86_64 "* ]]
           codesign --verify --deep --strict "$app"
+          "$app/Contents/MacOS/Notes" --verify-bundle
           plutil -lint "$app/Contents/Info.plist"
           hdiutil verify "$image"
           (cd dist && shasum -a 256 -c "Notes-${RELEASE_VERSION}-universal.dmg.sha256")

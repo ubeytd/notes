@@ -2,7 +2,7 @@
 
 An open source, local-first notes app for macOS. Write in a focused editor, organize with lightweight formatting, and find anything with the keyboard. Built independently for focused writing and quick capture.
 
-[Download the developer preview](https://github.com/ubeytd/notes/releases/tag/v1.0.2) · [Release process](RELEASING.md)
+[Download the developer preview](https://github.com/ubeytd/notes/releases/tag/v1.0.3) · [Release process](RELEASING.md)
 
 ![Notes in the Noir theme](screenshots/noir.png)
 
@@ -33,7 +33,7 @@ You can also open `dist/Notes.app` in Finder after building.
 ./scripts/build-dmg.sh
 ```
 
-This builds a universal Intel and Apple Silicon app, creates its icon, ad hoc signs the bundle, and writes `dist/Notes-1.0.2-universal.dmg` plus a SHA-256 checksum. Open the DMG and drag **Notes.app** to **Applications**. The bundle supports macOS 13 or newer.
+This builds a universal Intel and Apple Silicon app, creates its icon, ad hoc signs the bundle, and writes `dist/Notes-1.0.3-universal.dmg` plus a SHA-256 checksum. Open the DMG and drag **Notes.app** to **Applications**. The bundle supports macOS 13 or newer.
 
 When replacing an older build, your notes remain in the same local data file. Theme, glass, and custom shortcut preferences may need to be set again once because the app identifier and preference keys changed.
 
@@ -91,7 +91,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). This project is licensed under [MIT](LIC
 node --check Sources/Notes/Web/app.js
 python3 -m unittest discover -s tests -v
 codesign --verify --deep --strict dist/Notes.app
-hdiutil verify dist/Notes-1.0.2-universal.dmg
+hdiutil verify dist/Notes-1.0.3-universal.dmg
 ```
 
 

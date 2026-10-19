@@ -52,5 +52,5 @@ fi
 codesign --verify --deep --strict --verbose=2 "$app"
 plutil -lint "$app/Contents/Info.plist"
 plutil -lint "$resource_bundle/Contents/Info.plist"
-swift -e 'import Foundation; let bundle = Bundle(url: URL(fileURLWithPath: CommandLine.arguments[1]))!; precondition(bundle.url(forResource: "index", withExtension: "html", subdirectory: "Web") != nil)' "$resource_bundle"
+"$app/Contents/MacOS/Notes" --verify-bundle
 echo "Built universal $app"

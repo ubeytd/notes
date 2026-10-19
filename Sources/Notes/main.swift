@@ -2,6 +2,15 @@ import AppKit
 import WebKit
 import Darwin
 
+private enum NotesResources {
+    static var editorIndex: URL {
+        let executable = Bundle.main.executableURL ?? URL(fileURLWithPath: CommandLine.arguments[0])
+        return executable.deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Resources/Notes_Notes.bundle/Contents/Resources/Web/index.html")
+    }
+}
+
 final class TitleDragView: NSView {
     override func hitTest(_ point: NSPoint) -> NSView? {
         let local = convert(point, from: superview)
@@ -322,8 +331,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         window = panel
         applyTheme(UserDefaults.standard.string(forKey: "NotesTheme") ?? "noir")
         applyGlass(enabled: UserDefaults.standard.object(forKey: "NotesGlassEnabled") as? Bool ?? true, strength: UserDefaults.standard.object(forKey: "NotesGlassStrength") as? Int ?? 60)
-        if let url = Bundle.module.url(forResource: "index", withExtension: "html", subdirectory: "Web") {
-            web.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        let editorIndex = NotesResources.editorIndex
+        if FileManager.default.fileExists(atPath: editorIndex.path) {
+            web.loadFileURL(editorIndex, allowingReadAccessTo: editorIndex.deletingLastPathComponent())
+        } else {
+            let alert = NSAlert()
+            alert.messageText = "Notes Could Not Open"
+            alert.informativeText = "The editor files are missing. Reinstall Notes from the latest release."
+            alert.runModal()
         }
         NSApp.activate(ignoringOtherApps: true)
         if !UserDefaults.standard.bool(forKey: "NotesOnboardingComplete") {
@@ -372,6 +387,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         default: break
         }
     }
+}
+
+if CommandLine.arguments.contains("--verify-bundle") {
+    guard FileManager.default.fileExists(atPath: NotesResources.editorIndex.path) else {
+        fputs("Missing editor resource: \(NotesResources.editorIndex.path)\n", stderr)
+        exit(1)
+    }
+    print("Editor resource verified")
+    exit(0)
 }
 
 let app = NSApplication.shared
